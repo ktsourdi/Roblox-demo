@@ -27,8 +27,8 @@ gui.ResetOnSpawn = false
 gui.Parent = playerGui
 
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 260, 0, 210)
-frame.Position = UDim2.new(0, 12, 0, 12)
+frame.Size = UDim2.new(0, 180, 0, 110)
+frame.Position = UDim2.new(0, 10, 0, 10)
 frame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
 frame.BorderSizePixel = 0
 frame.Parent = gui
@@ -65,15 +65,15 @@ result.Parent = frame
 
 local function makeEggButton(text, xOffset, eggType)
 	local btn = Instance.new("TextButton")
-	btn.Size = UDim2.new(0, 80, 0, 32)
-	btn.Position = UDim2.new(0, xOffset, 0, 90)
+	btn.Size = UDim2.new(0, 60, 0, 25)
+	btn.Position = UDim2.new(0, xOffset, 0, 80)
 	btn.Text = text
 	btn.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
 	btn.TextColor3 = Color3.new(1, 1, 1)
 	btn.BorderSizePixel = 0
 	btn.AutoButtonColor = true
 	btn.Font = Enum.Font.Gotham
-	btn.TextSize = 14
+	btn.TextSize = 12
 	btn.Parent = frame
 
 	btn.MouseButton1Click:Connect(function()
@@ -101,9 +101,9 @@ local function makeEggButton(text, xOffset, eggType)
 	return btn
 end
 
-makeEggButton("Common", 10, "Common")
-makeEggButton("Rare", 95, "Rare")
-makeEggButton("Mythic", 180, "Mythic")
+makeEggButton("Common", 5, "Common")
+makeEggButton("Rare", 70, "Rare")
+makeEggButton("Mythic", 135, "Mythic")
 
 local function refresh()
 	local data = fetchProfile()

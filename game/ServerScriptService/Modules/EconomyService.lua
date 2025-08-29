@@ -115,8 +115,8 @@ function EconomyService:PlaceFish(userId, tankIndex, fishIndex)
 	local ModelFactory = require(game:GetService("ReplicatedStorage"):WaitForChild("Modules"):WaitForChild("ModelFactory"))
 	local fishModel = ModelFactory.createFishModel(fish)
 	
-	-- Position fish inside tank water (adjust position to be inside tank bounds)
-	local tankPosition = Vector3.new(tankIndex * 8, 2, 0) -- space tanks apart
+	-- Position fish inside tank water on the proper platform
+	local tankPosition = Vector3.new(tankIndex * 8 - 8, 3, 5) -- align with tank platforms
 	fishModel.CFrame = CFrame.new(
 		tankPosition.X + math.random(-2, 2),
 		tankPosition.Y + math.random(0, 2),

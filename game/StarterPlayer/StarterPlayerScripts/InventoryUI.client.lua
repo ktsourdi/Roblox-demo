@@ -27,8 +27,8 @@ gui.ResetOnSpawn = false
 gui.Parent = playerGui
 
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 260, 0, 260)
-frame.Position = UDim2.new(0, 12, 0, 200)
+frame.Size = UDim2.new(0, 180, 0, 140)
+frame.Position = UDim2.new(0, 10, 0, 130)
 frame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
 frame.BorderSizePixel = 0
 frame.Parent = gui
@@ -61,7 +61,7 @@ local function rebuild()
 	if not data or not data.Inventory then return end
 	for i, fish in ipairs(data.Inventory.Fish or {}) do
 		local row = Instance.new("Frame")
-		row.Size = UDim2.new(1, 0, 0, 28)
+		row.Size = UDim2.new(1, 0, 0, 24)
 		row.BackgroundTransparency = 1
 		row.Parent = list
 
@@ -84,15 +84,15 @@ local function rebuild()
 		nameLabel.Parent = row
 
 		local btn = Instance.new("TextButton")
-		btn.Size = UDim2.new(0, 90, 1, 0)
-		btn.Position = UDim2.new(1, -90, 0, 0)
+		btn.Size = UDim2.new(0, 60, 1, 0)
+		btn.Position = UDim2.new(1, -60, 0, 0)
 		btn.AnchorPoint = Vector2.new(1, 0)
 		btn.BackgroundColor3 = Color3.fromRGB(45, 45, 60)
 		btn.TextColor3 = Color3.new(1, 1, 1)
 		btn.BorderSizePixel = 0
 		btn.AutoButtonColor = true
 		btn.Font = Enum.Font.Gotham
-		btn.TextSize = 14
+		btn.TextSize = 11
 		btn.Text = "Place T1"
 		btn.Parent = row
 
