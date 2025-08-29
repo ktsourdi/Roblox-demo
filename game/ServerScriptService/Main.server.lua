@@ -21,6 +21,35 @@ EconomyService:InjectLeaderboards(LeaderboardService)
 
 -- Remote wiring for placement
 local Remotes = ReplicatedStorage:WaitForChild("RemoteEvents")
+local function deepCopy(tbl)
+	local result = {}
+	for k, v in pairs(tbl) do
+		if type(v) == "table" then
+			result[k] = deepCopy(v)
+		else
+			result[k] = v
+		end
+	end
+	return result
+end
+
+local function profileForClient(profile)
+	local out = {
+		Currencies = deepCopy(profile.Currencies or {}),
+		Inventory = deepCopy(profile.Inventory or {}),
+		Aquarium = deepCopy(profile.Aquarium or {}),
+		Stats = {
+			Likes = profile.Stats and profile.Stats.Likes or 0,
+		}
+	}
+	return out
+end
+
+Remotes.GetProfile.OnServerInvoke = function(player)
+	local profile = ProfileManager:Get(player.UserId)
+	if not profile then return nil end
+	return profileForClient(profile)
+end
 Remotes.PlaceFish.OnServerEvent:Connect(function(player, tankIndex, fishIndex)
 	EconomyService:PlaceFish(player.UserId, tankIndex, fishIndex)
 end)

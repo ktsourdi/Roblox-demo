@@ -20,6 +20,16 @@ local function ensureRemote(folder, name)
 	return remote
 end
 
+local function ensureRemoteFunction(folder, name)
+	local remoteFn = folder:FindFirstChild(name)
+	if not remoteFn then
+		remoteFn = Instance.new("RemoteFunction")
+		remoteFn.Name = name
+		remoteFn.Parent = folder
+	end
+	return remoteFn
+end
+
 local remotesFolder = ensureFolder(ReplicatedStorage, "RemoteEvents")
 ensureRemote(remotesFolder, "BuyEgg")
 ensureRemote(remotesFolder, "HatchEgg")
@@ -28,4 +38,5 @@ ensureRemote(remotesFolder, "VisitBoost")
 ensureRemote(remotesFolder, "LikeAquarium")
 ensureRemote(remotesFolder, "RedeemCode")
 ensureRemote(remotesFolder, "Announcement")
+ensureRemoteFunction(remotesFolder, "GetProfile")
 
