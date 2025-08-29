@@ -10,7 +10,7 @@ Decorations.Items = {
 	{ id = "anemone", name = "Anemone", multiplier = 1.07, rating = 2, price = 150 },
 	{ id = "bubbler", name = "Bubble Maker", multiplier = 1.03, rating = 1, price = 75 },
 	{ id = "shipwreck", name = "Shipwreck", multiplier = 1.12, rating = 4, price = 500 },
-	{ id = "glow_coral", name = "Glowing Coral", multiplier = 1.15, rating = 5, price = 750 },
+	{ id = "glow_coral", name = "Glowing Coral", multiplier = 1.15, rating = 5, price = 750, vipOnly = true },
 }
 
 return Decorations

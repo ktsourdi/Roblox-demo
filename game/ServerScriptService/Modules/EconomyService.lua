@@ -13,6 +13,11 @@ local BadgesService = nil
 
 local visitBoostByUserId = {}
 
+-- optional injected checks
+function EconomyService:InjectDecorPermissionCheck(callback)
+	self._CanUseDecor = callback
+end
+
 function EconomyService:Init(profileManager)
 	ProfileManager = profileManager
 	RunService.Heartbeat:Connect(function(step)
@@ -121,6 +126,10 @@ function EconomyService:PlaceDecoration(userId, tankIndex, decorationId)
 		if deco.id == decorationId then item = deco break end
 	end
 	if not item then return false end
+	-- VIP-only enforcement
+	if item.vipOnly and self._CanUseDecor and not self._CanUseDecor(userId, decorationId) then
+		return false
+	end
 	local price = item.price or 0
 	if (profile.Currencies.Coins or 0) < price then return false end
 	profile.Currencies.Coins -= price

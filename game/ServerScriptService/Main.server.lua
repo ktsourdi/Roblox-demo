@@ -1,6 +1,7 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local ServerScriptService = game:GetService("ServerScriptService")
 local Players = game:GetService("Players")
+local MarketplaceService = game:GetService("MarketplaceService")
 
 local ModulesFolder = ServerScriptService:WaitForChild("Modules")
 
@@ -97,5 +98,79 @@ Remotes.GetShop.OnServerInvoke = function(player)
 		Eggs = ShopConfig.Eggs,
 		Decorations = Decorations.Items,
 	}
+end
+
+-- Marketplace: gamepasses + dev products
+local OwnedGamepasses = {}
+
+local function ownsGamepass(userId, passId)
+	if type(passId) ~= "number" or passId <= 0 then return false end
+	local cache = OwnedGamepasses[userId]
+	if cache and cache[passId] ~= nil then
+		return cache[passId]
+	end
+	local ok, result = pcall(function()
+		return MarketplaceService:UserOwnsGamePassAsync(userId, passId)
+	end)
+	if not OwnedGamepasses[userId] then OwnedGamepasses[userId] = {} end
+	OwnedGamepasses[userId][passId] = ok and result or false
+	return OwnedGamepasses[userId][passId]
+end
+
+Players.PlayerAdded:Connect(function(player)
+	-- Pre-cache common passes
+	ownsGamepass(player.UserId, ShopConfig.Gamepasses.ExtraTankSlots)
+	ownsGamepass(player.UserId, ShopConfig.Gamepasses.FasterHatching)
+	ownsGamepass(player.UserId, ShopConfig.Gamepasses.VIPDecor)
+end)
+
+-- Inject VIP decor permission into economy service
+EconomyService:InjectDecorPermissionCheck(function(userId, decorationId)
+	if decorationId == "glow_coral" then
+		return ownsGamepass(userId, ShopConfig.Gamepasses.VIPDecor)
+	end
+	return true
+end)
+
+MarketplaceService.ProcessReceipt = function(receipt)
+	local player = Players:GetPlayerByUserId(receipt.PlayerId)
+	if not player then
+		return Enum.ProductPurchaseDecision.NotProcessedYet
+	end
+	local productId = receipt.ProductId
+	-- Map product IDs to rewards
+	local rewarded = false
+	if productId == ShopConfig.DevProducts.EggBundle3 then
+		local profile = ProfileManager:Get(player.UserId)
+		if profile then
+			profile.Currencies.Tickets += 300
+			rewarded = true
+		end
+	elseif productId == ShopConfig.DevProducts.EggBundle5 then
+		local profile = ProfileManager:Get(player.UserId)
+		if profile then
+			profile.Currencies.Tickets += 600
+			rewarded = true
+		end
+	elseif productId == ShopConfig.DevProducts.EggBundle10 then
+		local profile = ProfileManager:Get(player.UserId)
+		if profile then
+			profile.Currencies.Tickets += 1300
+			rewarded = true
+		end
+	elseif productId == ShopConfig.DevProducts.TicketBoost then
+		EconomyService:ApplyVisitBoost(player.UserId, 1.5, 10 * 60)
+		rewarded = true
+	elseif productId == ShopConfig.DevProducts.EventDecor then
+		local profile = ProfileManager:Get(player.UserId)
+		if profile then
+			-- Grant glow_coral to first tank for simplicity
+			local tank = profile.Aquarium.Tanks[1]
+			tank.decorations = tank.decorations or {}
+			table.insert(tank.decorations, "glow_coral")
+			rewarded = true
+		end
+	end
+	return rewarded and Enum.ProductPurchaseDecision.PurchaseGranted or Enum.ProductPurchaseDecision.NotProcessedYet
 end
 
