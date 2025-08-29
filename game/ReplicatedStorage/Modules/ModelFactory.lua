@@ -32,28 +32,37 @@ function ModelFactory.createTankModel(sizeType)
 	glass.CanCollide = false
 	glass.Parent = model
 	
-	-- Water inside tank
+	-- Water inside tank (welded to glass so it moves with model)
 	local water = Instance.new("Part")
 	water.Name = "Water"
-	water.Anchored = true
+	water.Anchored = false
 	water.Size = size.water
-	water.Position = Vector3.new(0, -0.3, 0)
+	water.CFrame = glass.CFrame * CFrame.new(0, -0.3, 0)
 	water.Transparency = 0.6
 	water.Color = Color3.fromRGB(100, 180, 255)
 	water.Material = Enum.Material.ForceField
 	water.CanCollide = false
 	water.Parent = model
+	local waterWeld = Instance.new("WeldConstraint")
+	waterWeld.Part0 = glass
+	waterWeld.Part1 = water
+	waterWeld.Parent = model
 	
-	-- Add glass frame for better visibility
+	-- Add glass frame for better visibility (welded to glass)
 	local frame = Instance.new("Part")
 	frame.Name = "Frame"
-	frame.Anchored = true
+	frame.Anchored = false
 	frame.Size = Vector3.new(size.glass.X + 0.2, size.glass.Y + 0.2, size.glass.Z + 0.2)
+	frame.CFrame = glass.CFrame
 	frame.Transparency = 0.3
 	frame.Color = Color3.fromRGB(150, 150, 150)
 	frame.Material = Enum.Material.Metal
 	frame.CanCollide = false
 	frame.Parent = model
+	local frameWeld = Instance.new("WeldConstraint")
+	frameWeld.Part0 = glass
+	frameWeld.Part1 = frame
+	frameWeld.Parent = model
 	
 	-- Set primary part for easier positioning
 	model.PrimaryPart = glass
@@ -71,7 +80,7 @@ function ModelFactory.createFishModel(fish)
 	body.Name = "Body"
 	body.Size = Vector3.new(2.4, 1.2, 0.8)
 	body.Shape = Enum.PartType.Block
-	body.Material = Enum.Material.Neon
+	body.Material = Enum.Material.SmoothPlastic
 	body.Color = rarityColors[fish.rarity or "Common"] or Color3.fromRGB(100, 150, 255)
 	body.CanCollide = false
 	body.Anchored = false
@@ -91,7 +100,7 @@ function ModelFactory.createFishModel(fish)
 	tail.Name = "Tail"
 	tail.Size = Vector3.new(0.6, 1.8, 0.3)
 	tail.Shape = Enum.PartType.Block
-	tail.Material = Enum.Material.Neon
+	tail.Material = Enum.Material.SmoothPlastic
 	tail.Color = body.Color
 	tail.CanCollide = false
 	tail.Anchored = false
@@ -117,7 +126,7 @@ function ModelFactory.createFishModel(fish)
 	leftEye.Name = "LeftEye"
 	leftEye.Size = Vector3.new(0.4, 0.4, 0.25)
 	leftEye.Shape = Enum.PartType.Ball
-	leftEye.Material = Enum.Material.Neon
+	leftEye.Material = Enum.Material.SmoothPlastic
 	leftEye.Color = Color3.new(1, 1, 1)
 	leftEye.CanCollide = false
 	leftEye.Anchored = false
@@ -127,7 +136,7 @@ function ModelFactory.createFishModel(fish)
 	leftPupil.Name = "LeftPupil"
 	leftPupil.Size = Vector3.new(0.2, 0.2, 0.2)
 	leftPupil.Shape = Enum.PartType.Ball
-	leftPupil.Material = Enum.Material.Neon
+	leftPupil.Material = Enum.Material.SmoothPlastic
 	leftPupil.Color = Color3.new(0, 0, 0)
 	leftPupil.CanCollide = false
 	leftPupil.Anchored = false
@@ -174,7 +183,7 @@ function ModelFactory.createFishModel(fish)
 	topFin.Name = "TopFin"
 	topFin.Size = Vector3.new(0.3, 1.2, 0.15)
 	topFin.Shape = Enum.PartType.Block
-	topFin.Material = Enum.Material.Neon
+	topFin.Material = Enum.Material.SmoothPlastic
 	topFin.Color = body.Color
 	topFin.CanCollide = false
 	topFin.Anchored = false
@@ -196,7 +205,7 @@ function ModelFactory.createFishModel(fish)
 	leftSideFin.Name = "LeftFin"
 	leftSideFin.Size = Vector3.new(0.8, 0.2, 0.1)
 	leftSideFin.Shape = Enum.PartType.Block
-	leftSideFin.Material = Enum.Material.Neon
+	leftSideFin.Material = Enum.Material.SmoothPlastic
 	leftSideFin.Color = body.Color
 	leftSideFin.CanCollide = false
 	leftSideFin.Anchored = false
@@ -250,13 +259,13 @@ function ModelFactory.createFishModel(fish)
 	-- Add swimming physics
 	local bodyPos = Instance.new("BodyPosition")
 	bodyPos.MaxForce = Vector3.new(4000, 4000, 4000)
-	bodyPos.D = 500
-	bodyPos.P = 3000
+	bodyPos.D = 200
+	bodyPos.P = 1500
 	bodyPos.Position = body.Position
 	bodyPos.Parent = body
 	
 	local bodyVel = Instance.new("BodyVelocity")
-	bodyVel.MaxForce = Vector3.new(2000, 0, 2000)
+	bodyVel.MaxForce = Vector3.new(0, 0, 0)
 	bodyVel.Velocity = Vector3.new(0, 0, 0)
 	bodyVel.Parent = body
 	
@@ -283,14 +292,7 @@ function ModelFactory.createFishModel(fish)
 			)
 			bodyPos.Position = target
 			
-			-- Random velocity for more natural movement
-			bodyVel.Velocity = Vector3.new(
-				math.random(-2, 2),
-				0,
-				math.random(-2, 2)
-			)
-			
-			task.wait(math.random(2, 4))
+			task.wait(math.random(1, 3))
 		end
 	end)
 	
@@ -302,10 +304,12 @@ function ModelFactory.createFishModel(fish)
 			return 
 		end
 		
-		local vel = bodyVel.Velocity
-		if vel.Magnitude > 0.1 then
-			local lookDirection = (body.Position + vel).Unit
-			body.CFrame = CFrame.new(body.Position, body.Position + vel)
+		local desired = bodyPos.Position - body.Position
+		if desired.Magnitude > 0.05 then
+			local forward = Vector3.new(desired.X, 0, desired.Z)
+			if forward.Magnitude > 0.01 then
+				body.CFrame = CFrame.new(body.Position, body.Position + forward.Unit)
+			end
 		end
 	end)
 	

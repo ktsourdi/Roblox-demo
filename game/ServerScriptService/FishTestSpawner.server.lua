@@ -37,19 +37,55 @@ local testFish = {
 for i, fish in ipairs(testFish) do
 	local fishModel = ModelFactory.createFishModel(fish)
 	
-	-- Position in tanks (spread across 3 tanks)
+	-- Pick target tank (spread across 3 tanks)
 	local tankIndex = ((i-1) % 3) + 1
-	local x = (tankIndex-1) * 14 - 14  -- Tank positions: -14, 0, 14
-	local y = 6 + math.random(0, 2)    -- Height within tank
-	local z = 5 + math.random(-3, 3)   -- Random position in tank
+	local tank = workspace:FindFirstChild("Tank" .. tankIndex)
 	
-	if fishModel.PrimaryPart then
-		fishModel:SetPrimaryPartCFrame(CFrame.new(x, y, z))
-	else
-		fishModel:MoveTo(Vector3.new(x, y, z))
+	-- Default world fallback (in case tank not yet created)
+	local spawnCFrame = CFrame.new((tankIndex-1) * 14 - 14, 6, 5)
+	local swimCenter, swimHalf
+	
+	if tank then
+		-- Use the tank's water volume to bound the fish
+		local water = tank:FindFirstChild("Water")
+		if water and water:IsA("BasePart") then
+			-- Center is the water's world position, half extents from its size
+			local half = water.Size * 0.5
+			-- Leave a padding so fish never clip the glass
+			local padding = Vector3.new(0.6, 0.6, 0.6)
+			swimHalf = Vector3.new(
+				math.max(half.X - padding.X, 0.5),
+				math.max(half.Y - padding.Y, 0.5),
+				math.max(half.Z - padding.Z, 0.5)
+			)
+			swimCenter = water.Position
+			spawnCFrame = CFrame.new(swimCenter + Vector3.new(
+				(math.random() * 2 - 1) * (swimHalf.X * 0.6),
+				0,
+				(math.random() * 2 - 1) * (swimHalf.Z * 0.6)
+			))
+		end
 	end
 	
-	fishModel.Parent = workspace
+	-- Apply initial transform
+	if fishModel.PrimaryPart then
+		fishModel:SetPrimaryPartCFrame(spawnCFrame)
+	else
+		fishModel:MoveTo(spawnCFrame.Position)
+	end
+	
+	-- Set swim bounds via attributes (used by ModelFactory behavior)
+	if swimCenter and swimHalf then
+		fishModel:SetAttribute("SwimCenterX", swimCenter.X)
+		fishModel:SetAttribute("SwimCenterY", swimCenter.Y)
+		fishModel:SetAttribute("SwimCenterZ", swimCenter.Z)
+		fishModel:SetAttribute("SwimHalfX", swimHalf.X)
+		fishModel:SetAttribute("SwimHalfY", swimHalf.Y)
+		fishModel:SetAttribute("SwimHalfZ", swimHalf.Z)
+	end
+	
+	-- Parent fish beneath the tank for organization (fallback to workspace)
+	fishModel.Parent = tank or workspace
 	fishModel.Name = "ProfessionalFish_" .. i
 	
 	print("✅ Spawned " .. fish.rarity .. " fish '" .. fish.name .. "' in Tank " .. tankIndex)
