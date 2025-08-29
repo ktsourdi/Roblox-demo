@@ -11,6 +11,7 @@ local SocialService = require(ModulesFolder:WaitForChild("SocialService"))
 local EventsService = require(ModulesFolder:WaitForChild("EventsService"))
 local LeaderboardService = require(ModulesFolder:WaitForChild("LeaderboardService"))
 local BadgesService = require(ModulesFolder:WaitForChild("BadgesService"))
+local RateLimiter = require(ModulesFolder:WaitForChild("RateLimiter"))
 
 -- Inject dependencies
 ShopService:Init(ProfileManager, BadgesService)
@@ -45,28 +46,37 @@ local function profileForClient(profile)
 	return out
 end
 
+local limiter = RateLimiter.new(2, 5)
+
 Remotes.GetProfile.OnServerInvoke = function(player)
+	if not limiter:allow("GetProfile:" .. player.UserId, 1, 4) then return nil end
 	local profile = ProfileManager:Get(player.UserId)
 	if not profile then return nil end
 	return profileForClient(profile)
 end
 Remotes.PlaceFish.OnServerEvent:Connect(function(player, tankIndex, fishIndex)
+	if not limiter:allow("PlaceFish:" .. player.UserId, 2, 6) then return end
 	EconomyService:PlaceFish(player.UserId, tankIndex, fishIndex)
 end)
 
 -- Simple social visit boost MVP
 Remotes.VisitBoost.OnServerEvent:Connect(function(player, targetUserId)
+	if not limiter:allow("VisitBoost:" .. player.UserId, 60, 2) then return end
 	local BOOST = 1.25
 	local DURATION = 5 * 60
 	EconomyService:ApplyVisitBoost(player.UserId, BOOST, DURATION)
-	EconomyService:ApplyVisitBoost(targetUserId, BOOST, DURATION)
+	if typeof(targetUserId) == "number" then
+		EconomyService:ApplyVisitBoost(targetUserId, BOOST, DURATION)
+	end
 end)
 
 Remotes.LikeAquarium.OnServerEvent:Connect(function(player, targetUserId)
+	if not limiter:allow("Like:" .. player.UserId, 10, 3) then return end
 	SocialService:HandleLike(player, targetUserId)
 end)
 
 Remotes.RedeemCode.OnServerEvent:Connect(function(player, code)
+	if not limiter:allow("RedeemCode:" .. player.UserId, 10, 3) then return end
 	EventsService:RedeemCode(player, code)
 end)
 

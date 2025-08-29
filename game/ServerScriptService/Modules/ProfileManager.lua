@@ -1,6 +1,7 @@
 -- ProfileManager: wraps ProfileService-like behavior using DataStoreService for MVP
 local DataStoreService = game:GetService("DataStoreService")
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 
 local ProfileManager = {}
 
@@ -14,6 +15,8 @@ local ProfileTemplate = {
 }
 
 local activeProfiles = {}
+
+local AUTOSAVE_INTERVAL = 120 -- seconds
 
 local function deepCopy(tbl)
 	local result = {}
@@ -95,6 +98,18 @@ game:BindToClose(function()
 		ProfileManager:SaveAsync(userId)
 	end
 end)
+
+-- Periodic autosave loop (server only)
+if RunService:IsServer() then
+	task.spawn(function()
+		while true do
+			task.wait(AUTOSAVE_INTERVAL)
+			for userId, _ in pairs(activeProfiles) do
+				ProfileManager:SaveAsync(userId)
+			end
+		end
+	end)
+end
 
 return ProfileManager
 
