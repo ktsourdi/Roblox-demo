@@ -11,16 +11,20 @@ local ShopService = {}
 
 local ProfileManager = nil -- to be injected
 local BadgesService = nil -- optional injection
+local RateLimiter = require(game:GetService("ServerScriptService"):WaitForChild("Modules"):WaitForChild("RateLimiter"))
+local limiter = RateLimiter.new(2, 5)
 
 function ShopService:Init(profileManager, badgesService)
 	ProfileManager = profileManager
 	BadgesService = badgesService
 
 	Remotes.BuyEgg.OnServerEvent:Connect(function(player, eggType)
+		if not limiter:allow("BuyEgg:" .. player.UserId, 2, 4) then return end
 		self:HandleBuyEgg(player, eggType)
 	end)
 
 	Remotes.HatchEgg.OnServerEvent:Connect(function(player, eggType)
+		if not limiter:allow("HatchEgg:" .. player.UserId, 2, 4) then return end
 		self:HandleHatchEgg(player, eggType)
 	end)
 end
@@ -30,15 +34,17 @@ function ShopService:HandleBuyEgg(player, eggType)
 	if not profile then return end
 	local egg = ShopConfig.Eggs[eggType]
 	if not egg then return end
-	local currencyName = egg.priceType
-	local price = egg.priceAmount
-	if profile.Currencies[currencyName] and profile.Currencies[currencyName] >= price then
-		profile.Currencies[currencyName] -= price
-		-- In MVP, buying egg immediately hatches on client call, but we could grant an egg item.
-		Remotes.Announcement:FireAllClients(player.Name .. " bought a " .. eggType .. " Egg!")
-	else
-		-- insufficient funds, optionally respond via RemoteFunction in future
-	end
+	-- No charge here; charging happens on hatch to prevent free hatch exploit
+	Remotes.Announcement:FireAllClients(player.Name .. " bought a " .. eggType .. " Egg!")
+end
+
+local function pickFromEventPool()
+	local pool = FishData.FishByRarity.Event
+	if not pool or #pool == 0 then return nil end
+	local index = math.random(1, #pool)
+	local fish = pool[index]
+	-- Tag as Epic by default for event, could be varied later
+	return { id = fish.id, name = fish.name, rarity = "Epic" }
 end
 
 local function pickFishByRarity(targetRarity)
@@ -54,19 +60,33 @@ function ShopService:HandleHatchEgg(player, eggType)
 	if not profile then return end
 	local egg = ShopConfig.Eggs[eggType]
 	if not egg then return end
+	-- Validate event egg enable
+	if eggType == "Event" and egg.enabled ~= true then return end
+	-- Charge currency here (authoritative)
+	local currencyName = egg.priceType
+	local price = egg.priceAmount
+	if not (profile.Currencies[currencyName] and profile.Currencies[currencyName] >= price) then
+		return
+	end
+	profile.Currencies[currencyName] -= price
 
-	local rarity = RandomUtil.weightedRandom(egg.weights)
-	local fish = pickFishByRarity(rarity)
+	local fish
+	if egg.pool == "Event" then
+		fish = pickFromEventPool()
+	else
+		local rarity = RandomUtil.weightedRandom(egg.weights)
+		fish = pickFishByRarity(rarity)
+	end
 	if not fish then return end
 
 	table.insert(profile.Inventory.Fish, fish)
 
-	if rarity == "Legendary" or rarity == "Mythic" then
-		Remotes.Announcement:FireAllClients(player.Name .. " hatched a " .. rarity .. " " .. fish.name .. "!")
+	if fish.rarity == "Legendary" or fish.rarity == "Mythic" then
+		Remotes.Announcement:FireAllClients(player.Name .. " hatched a " .. fish.rarity .. " " .. fish.name .. "!")
 	end
 
 	if BadgesService then
-		BadgesService:OnHatch(player, rarity)
+		BadgesService:OnHatch(player, fish.rarity)
 	end
 end
 

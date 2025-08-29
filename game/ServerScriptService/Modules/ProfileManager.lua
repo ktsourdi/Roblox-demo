@@ -1,6 +1,7 @@
 -- ProfileManager: wraps ProfileService-like behavior using DataStoreService for MVP
 local DataStoreService = game:GetService("DataStoreService")
 local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
 
 local ProfileManager = {}
 
@@ -10,10 +11,12 @@ local ProfileTemplate = {
 	Currencies = { Tickets = 250, Coins = 500 },
 	Inventory = { Fish = {}, Decorations = {} },
 	Aquarium = { Tanks = { { type = "Small", slots = {}, decorations = {} } }, Rating = 0 },
-	Stats = { Likes = 0, TicketsEarnedLifetime = 0, LastDailyLogin = 0, LikedBy = {}, RedeemedCodes = {} },
+	Stats = { Likes = 0, TicketsEarnedLifetime = 0, LastDailyLogin = 0, LikedBy = {}, RedeemedCodes = {}, Onboarding = { Shop = false, Inventory = false, Decor = false, Friends = false } },
 }
 
 local activeProfiles = {}
+
+local AUTOSAVE_INTERVAL = 120 -- seconds
 
 local function deepCopy(tbl)
 	local result = {}
@@ -95,6 +98,18 @@ game:BindToClose(function()
 		ProfileManager:SaveAsync(userId)
 	end
 end)
+
+-- Periodic autosave loop (server only)
+if RunService:IsServer() then
+	task.spawn(function()
+		while true do
+			task.wait(AUTOSAVE_INTERVAL)
+			for userId, _ in pairs(activeProfiles) do
+				ProfileManager:SaveAsync(userId)
+			end
+		end
+	end)
+end
 
 return ProfileManager
 

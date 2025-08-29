@@ -9,8 +9,14 @@ local TankData = require(ServerStorage:WaitForChild("TankData"))
 local EconomyService = {}
 
 local ProfileManager = nil
+local BadgesService = nil
 
 local visitBoostByUserId = {}
+
+-- optional injected checks
+function EconomyService:InjectDecorPermissionCheck(callback)
+	self._CanUseDecor = callback
+end
 
 function EconomyService:Init(profileManager)
 	ProfileManager = profileManager
@@ -92,13 +98,62 @@ end
 function EconomyService:PlaceFish(userId, tankIndex, fishIndex)
 	local profile = ProfileManager:Get(userId)
 	if not profile then return false end
-	local tank = profile.Aquarium.Tanks[tankIndex]
-	local fish = profile.Inventory.Fish[fishIndex]
+	if type(tankIndex) ~= "number" or type(fishIndex) ~= "number" then return false end
+	local tanks = profile.Aquarium and profile.Aquarium.Tanks
+	local inv = profile.Inventory and profile.Inventory.Fish
+	if type(tanks) ~= "table" or type(inv) ~= "table" then return false end
+	if tankIndex < 1 or tankIndex > #tanks then return false end
+	if fishIndex < 1 or fishIndex > #inv then return false end
+	local tank = tanks[tankIndex]
+	local fish = inv[fishIndex]
 	if not tank or not fish then return false end
 	local tType = TankData.Types[tank.type]
+	if not tType then return false end
 	if #tank.slots >= tType.slots then return false end
 	table.insert(tank.slots, fish)
-	table.remove(profile.Inventory.Fish, fishIndex)
+	table.remove(inv, fishIndex)
+	return true
+end
+
+-- Decorations: purchase and place into a tank; updates rating
+function EconomyService:PlaceDecoration(userId, tankIndex, decorationId)
+	local profile = ProfileManager:Get(userId)
+	if not profile then return false end
+	local tank = profile.Aquarium.Tanks[tankIndex]
+	if not tank then return false end
+	local item
+	for _, deco in ipairs(DecorationsData.Items) do
+		if deco.id == decorationId then item = deco break end
+	end
+	if not item then return false end
+	-- VIP-only enforcement
+	if item.vipOnly and self._CanUseDecor and not self._CanUseDecor(userId, decorationId) then
+		return false
+	end
+	local price = item.price or 0
+	if (profile.Currencies.Coins or 0) < price then return false end
+	profile.Currencies.Coins -= price
+	tank.decorations = tank.decorations or {}
+	table.insert(tank.decorations, decorationId)
+	-- update rating and trigger badge checks
+	local rating = 0
+	for _, t in ipairs(profile.Aquarium.Tanks) do
+		for _, dId in ipairs(t.decorations or {}) do
+			for _, d in ipairs(DecorationsData.Items) do
+				if d.id == dId then
+					rating += (d.rating or 0)
+					break
+				end
+			end
+		end
+	end
+	profile.Aquarium.Rating = rating
+	if BadgesService then
+		local player = game:GetService("Players"):GetPlayerByUserId(userId)
+		if player then
+			BadgesService:OnRating(player, rating)
+		end
+	end
 	return true
 end
 
@@ -109,6 +164,10 @@ end
 
 function EconomyService:InjectLeaderboards(service)
 	self._LeaderboardService = service
+end
+
+function EconomyService:InjectBadges(service)
+	BadgesService = service
 end
 
 return EconomyService
