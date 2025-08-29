@@ -13,6 +13,14 @@ local function fetchProfile()
 	return nil
 end
 
+local rarityColors = {
+	Common = Color3.fromRGB(180, 200, 220),
+	Rare = Color3.fromRGB(100, 160, 255),
+	Epic = Color3.fromRGB(180, 100, 255),
+	Legendary = Color3.fromRGB(255, 170, 60),
+	Mythic = Color3.fromRGB(255, 60, 120),
+}
+
 local gui = Instance.new("ScreenGui")
 gui.Name = "InventoryUI"
 gui.ResetOnSpawn = false
@@ -57,9 +65,16 @@ local function rebuild()
 		row.BackgroundTransparency = 1
 		row.Parent = list
 
+		local icon = Instance.new("Frame")
+		icon.Size = UDim2.new(0, 18, 0, 18)
+		icon.Position = UDim2.new(0, 0, 0.5, -9)
+		icon.BackgroundColor3 = rarityColors[fish.rarity or "Common"] or Color3.new(1, 1, 1)
+		icon.BorderSizePixel = 0
+		icon.Parent = row
+
 		local nameLabel = Instance.new("TextLabel")
-		nameLabel.Size = UDim2.new(1, -100, 1, 0)
-		nameLabel.Position = UDim2.new(0, 0, 0, 0)
+		nameLabel.Size = UDim2.new(1, -120, 1, 0)
+		nameLabel.Position = UDim2.new(0, 24, 0, 0)
 		nameLabel.BackgroundTransparency = 1
 		nameLabel.Font = Enum.Font.Gotham
 		nameLabel.TextSize = 14
