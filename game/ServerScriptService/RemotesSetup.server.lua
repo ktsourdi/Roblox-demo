@@ -39,4 +39,6 @@ ensureRemote(remotesFolder, "LikeAquarium")
 ensureRemote(remotesFolder, "RedeemCode")
 ensureRemote(remotesFolder, "Announcement")
 ensureRemoteFunction(remotesFolder, "GetProfile")
+ensureRemote(remotesFolder, "PlaceDecoration")
+ensureRemoteFunction(remotesFolder, "GetShop")
 

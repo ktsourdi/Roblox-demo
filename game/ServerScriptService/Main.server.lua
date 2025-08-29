@@ -19,6 +19,7 @@ EconomyService:Init(ProfileManager)
 SocialService:Init(ProfileManager, LeaderboardService)
 EventsService:Init(ProfileManager)
 EconomyService:InjectLeaderboards(LeaderboardService)
+EconomyService:InjectBadges(BadgesService)
 
 -- Remote wiring for placement
 local Remotes = ReplicatedStorage:WaitForChild("RemoteEvents")
@@ -79,4 +80,22 @@ Remotes.RedeemCode.OnServerEvent:Connect(function(player, code)
 	if not limiter:allow("RedeemCode:" .. player.UserId, 10, 3) then return end
 	EventsService:RedeemCode(player, code)
 end)
+
+-- Decor placement
+Remotes.PlaceDecoration.OnServerEvent:Connect(function(player, tankIndex, decorationId)
+	if not limiter:allow("PlaceDecoration:" .. player.UserId, 2, 4) then return end
+	EconomyService:PlaceDecoration(player.UserId, tankIndex, decorationId)
+end)
+
+-- Shop/config info
+local ServerStorage = game:GetService("ServerStorage")
+local ShopConfig = require(ServerStorage:WaitForChild("ShopConfig"))
+local Decorations = require(ServerStorage:WaitForChild("Decorations"))
+Remotes.GetShop.OnServerInvoke = function(player)
+	if not limiter:allow("GetShop:" .. player.UserId, 1, 3) then return nil end
+	return {
+		Eggs = ShopConfig.Eggs,
+		Decorations = Decorations.Items,
+	}
+end
 

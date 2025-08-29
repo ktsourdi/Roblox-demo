@@ -9,6 +9,7 @@ local TankData = require(ServerStorage:WaitForChild("TankData"))
 local EconomyService = {}
 
 local ProfileManager = nil
+local BadgesService = nil
 
 local visitBoostByUserId = {}
 
@@ -102,6 +103,44 @@ function EconomyService:PlaceFish(userId, tankIndex, fishIndex)
 	return true
 end
 
+-- Decorations: purchase and place into a tank; updates rating
+function EconomyService:PlaceDecoration(userId, tankIndex, decorationId)
+	local profile = ProfileManager:Get(userId)
+	if not profile then return false end
+	local tank = profile.Aquarium.Tanks[tankIndex]
+	if not tank then return false end
+	local item
+	for _, deco in ipairs(DecorationsData.Items) do
+		if deco.id == decorationId then item = deco break end
+	end
+	if not item then return false end
+	local price = item.price or 0
+	if (profile.Currencies.Coins or 0) < price then return false end
+	profile.Currencies.Coins -= price
+	tank.decorations = tank.decorations or {}
+	table.insert(tank.decorations, decorationId)
+	-- update rating and trigger badge checks
+	local rating = 0
+	for _, t in ipairs(profile.Aquarium.Tanks) do
+		for _, dId in ipairs(t.decorations or {}) do
+			for _, d in ipairs(DecorationsData.Items) do
+				if d.id == dId then
+					rating += (d.rating or 0)
+					break
+				end
+			end
+		end
+	end
+	profile.Aquarium.Rating = rating
+	if BadgesService then
+		local player = game:GetService("Players"):GetPlayerByUserId(userId)
+		if player then
+			BadgesService:OnRating(player, rating)
+		end
+	end
+	return true
+end
+
 -- Expose internals to other modules in MVP
 function EconomyService:_setProfileManager(pm)
 	ProfileManager = pm
@@ -109,6 +148,10 @@ end
 
 function EconomyService:InjectLeaderboards(service)
 	self._LeaderboardService = service
+end
+
+function EconomyService:InjectBadges(service)
+	BadgesService = service
 end
 
 return EconomyService
