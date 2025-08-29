@@ -97,6 +97,8 @@ Remotes.GetShop.OnServerInvoke = function(player)
 	return {
 		Eggs = ShopConfig.Eggs,
 		Decorations = Decorations.Items,
+		Gamepasses = ShopConfig.Gamepasses,
+		DevProducts = ShopConfig.DevProducts,
 	}
 end
 
@@ -169,6 +171,12 @@ MarketplaceService.ProcessReceipt = function(receipt)
 			tank.decorations = tank.decorations or {}
 			table.insert(tank.decorations, "glow_coral")
 			rewarded = true
+		end
+	end
+	-- If a gamepass is purchased, invalidate cache for that user
+	if not rewarded then
+		if receipt.ProductType == Enum.ProductType.GamePass then
+			OwnedGamepasses[receipt.PlayerId] = nil
 		end
 	end
 	return rewarded and Enum.ProductPurchaseDecision.PurchaseGranted or Enum.ProductPurchaseDecision.NotProcessedYet
