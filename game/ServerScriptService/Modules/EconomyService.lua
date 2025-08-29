@@ -110,6 +110,22 @@ function EconomyService:PlaceFish(userId, tankIndex, fishIndex)
 	local tType = TankData.Types[tank.type]
 	if not tType then return false end
 	if #tank.slots >= tType.slots then return false end
+	
+	-- Create visual fish model in the game world
+	local ModelFactory = require(game:GetService("ReplicatedStorage"):WaitForChild("Modules"):WaitForChild("ModelFactory"))
+	local fishModel = ModelFactory.createFishModel(fish)
+	
+	-- Position fish inside tank water (adjust position to be inside tank bounds)
+	local tankPosition = Vector3.new(tankIndex * 8, 2, 0) -- space tanks apart
+	fishModel.CFrame = CFrame.new(
+		tankPosition.X + math.random(-2, 2),
+		tankPosition.Y + math.random(0, 2),
+		tankPosition.Z + math.random(-1, 1)
+	)
+	
+	-- Parent to workspace so it's visible
+	fishModel.Parent = game.Workspace
+	
 	table.insert(tank.slots, fish)
 	table.remove(inv, fishIndex)
 	return true

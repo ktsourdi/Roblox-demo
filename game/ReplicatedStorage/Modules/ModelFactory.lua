@@ -11,46 +11,86 @@ local rarityColors = {
 function ModelFactory.createTankModel(sizeType)
 	local model = Instance.new("Model")
 	model.Name = sizeType .. "Tank"
-	local base = Instance.new("Part")
-	base.Name = "Glass"
-	base.Anchored = true
-	base.Size = Vector3.new(6, 4, 3)
-	base.Transparency = 0.5
-	base.Color = Color3.fromRGB(80, 120, 200)
-	base.Parent = model
+	
+	-- Glass walls (transparent)
+	local glass = Instance.new("Part")
+	glass.Name = "Glass"
+	glass.Anchored = true
+	glass.Size = Vector3.new(6, 4, 3)
+	glass.Transparency = 0.8
+	glass.Color = Color3.fromRGB(200, 220, 255)
+	glass.Material = Enum.Material.Glass
+	glass.CanCollide = false
+	glass.Parent = model
+	
+	-- Water inside tank
 	local water = Instance.new("Part")
 	water.Name = "Water"
 	water.Anchored = true
-	water.Size = Vector3.new(5.8, 3.6, 2.8)
-	water.Position = Vector3.new(0, 0.2, 0)
-	water.Transparency = 0.6
-	water.Color = Color3.fromRGB(60, 150, 220)
-	water.Material = Enum.Material.Glass
+	water.Size = Vector3.new(5.6, 3.2, 2.6)
+	water.Position = Vector3.new(0, -0.2, 0)
+	water.Transparency = 0.7
+	water.Color = Color3.fromRGB(100, 180, 255)
+	water.Material = Enum.Material.ForceField
+	water.CanCollide = false
 	water.Parent = model
+	
 	return model
 end
 
 function ModelFactory.createFishModel(fish)
-	local model = Instance.new("Model")
-	model.Name = fish.name or "Fish"
-	local body = Instance.new("Part")
-	body.Name = "Body"
-	body.Size = Vector3.new(0.8, 0.4, 0.2)
-	body.Shape = Enum.PartType.Block
-	body.Material = Enum.Material.SmoothPlastic
-	body.Color = rarityColors[fish.rarity or "Common"] or Color3.new(1, 1, 1)
-	body.CanCollide = false
-	body.Anchored = true
-	body.Parent = model
-	local fin = Instance.new("Part")
-	fin.Name = "Fin"
-	fin.Size = Vector3.new(0.2, 0.2, 0.05)
-	fin.Color = Color3.fromRGB(255, 255, 255)
-	fin.Material = Enum.Material.SmoothPlastic
-	fin.CanCollide = false
-	fin.Anchored = true
-	fin.Parent = model
-	return model
+	-- Try to find a pre-made MeshPart inside ReplicatedStorage/FishModels
+	local FishModels = ReplicatedStorage:WaitForChild("FishModels", 5)
+	local template = FishModels and FishModels:FindFirstChild(fish.id)
+
+	local mesh
+	if template and template:IsA("MeshPart") then
+		mesh = template:Clone()
+	else
+		-- Fallback: create a MeshPart from ids stored in FishData
+		mesh = Instance.new("MeshPart")
+		mesh.MeshId    = fish.meshId and ("rbxassetid://" .. tostring(fish.meshId)) or ""
+		mesh.TextureID = fish.textureId and ("rbxassetid://" .. tostring(fish.textureId)) or ""
+		mesh.Size      = Vector3.new(1.6, 1.0, 0.6)
+	end
+
+	mesh.Name       = fish.name or "Fish"
+	mesh.Anchored   = false
+	mesh.CanCollide = false
+	mesh.CastShadow = false
+
+	-- Physics objects for idle swimming -----------------------------------
+	local bodyPos = Instance.new("BodyPosition")
+	bodyPos.MaxForce = Vector3.new(4e3, 4e3, 4e3)
+	bodyPos.D = 250
+	bodyPos.P = 1000
+	bodyPos.Parent = mesh
+
+	local bodyVel = Instance.new("BodyVelocity")
+	bodyVel.MaxForce = Vector3.new(4e3, 0, 4e3)
+	bodyVel.Velocity = Vector3.new()
+	bodyVel.Parent   = mesh
+
+	-- Wander loop to keep fish moving gently
+	task.spawn(function()
+		while mesh.Parent do
+			bodyPos.Position = mesh.Position + Vector3.new(math.random(-2,2), math.random(-1,1), math.random(-2,2))
+			bodyVel.Velocity = Vector3.new(math.random(-1,1), 0, math.random(-1,1))
+			task.wait(math.random(4,7))
+		end
+	end)
+
+	-- Face velocity
+	local hb
+	hb = game:GetService("RunService").Heartbeat:Connect(function()
+		if not mesh.Parent then hb:Disconnect() return end
+		local v = bodyVel.Velocity
+		if v.Magnitude > 0.05 then
+			mesh.CFrame = CFrame.new(mesh.Position, mesh.Position + v)
+		end
+	end)
+
+	return mesh
 end
 
 return ModelFactory

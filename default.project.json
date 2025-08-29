@@ -1,0 +1,27 @@
+{
+  "name": "AquariumGame",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "$className": "ReplicatedStorage",
+      "Modules": {
+        "$path": "game/ReplicatedStorage/Modules"
+      }
+    },
+    "ServerStorage": {
+      "$className": "ServerStorage",
+      "$path": "game/ServerStorage"
+    },
+    "ServerScriptService": {
+      "$className": "ServerScriptService",
+      "$path": "game/ServerScriptService"
+    },
+    "StarterPlayer": {
+      "$className": "StarterPlayer",
+      "StarterPlayerScripts": {
+        "$className": "StarterPlayerScripts",
+        "$path": "game/StarterPlayer/StarterPlayerScripts"
+      }
+    }
+  }
+}

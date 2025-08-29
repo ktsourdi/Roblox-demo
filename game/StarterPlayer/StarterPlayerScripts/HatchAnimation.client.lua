@@ -1,3 +1,4 @@
+-- Testing Rojo sync! 🚀
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Remotes = ReplicatedStorage:WaitForChild("RemoteEvents")
 
@@ -8,4 +9,6 @@ end)
 
 -- Example: trigger hatch animation placeholder when hatching
 -- In UI, after sending BuyEgg/HatchEgg, play a tween/particle here.
+
+-- Added via Rojo sync test! This should appear instantly in Studio!
 
