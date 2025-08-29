@@ -4,6 +4,7 @@ local Workspace = game:GetService("Workspace")
 
 local player = Players.LocalPlayer
 local Remotes = ReplicatedStorage:WaitForChild("RemoteEvents")
+local ModelFactory = require(ReplicatedStorage:WaitForChild("Modules"):WaitForChild("ModelFactory"))
 
 local function fetchProfile()
 	local ok, data = pcall(function()
@@ -13,7 +14,7 @@ local function fetchProfile()
 	return nil
 end
 
--- Minimal tank model: a transparent box with billboards for fish
+-- Minimal tank models with fish
 local root = Instance.new("Folder")
 root.Name = "TankViz"
 root.Parent = Workspace
@@ -22,32 +23,17 @@ local function clearChildren()
 	for _, c in ipairs(root:GetChildren()) do c:Destroy() end
 end
 
-local function makeBillboard(text, cf)
-	local part = Instance.new("Part")
-	part.Size = Vector3.new(1, 1, 1)
-	part.CFrame = cf
-	part.Anchored = true
-	part.Transparency = 1
-	part.CanCollide = false
-	part.Parent = root
-
-	local bb = Instance.new("BillboardGui")
-	bb.Size = UDim2.new(0, 100, 0, 24)
-	bb.Adornee = part
-	bb.AlwaysOnTop = true
-	bb.Parent = part
-
-	local lbl = Instance.new("TextLabel")
-	lbl.Size = UDim2.new(1, 0, 1, 0)
-	lbl.BackgroundTransparency = 0.2
-	lbl.BackgroundColor3 = Color3.fromRGB(20, 40, 60)
-	lbl.TextColor3 = Color3.new(1, 1, 1)
-	lbl.TextSize = 14
-	lbl.Font = Enum.Font.Gotham
-	lbl.Text = text
-	lbl.Parent = bb
-
-	return part
+local function animateFish(part, baseCFrame, offset)
+	task.spawn(function()
+		local t = math.random()
+		while part.Parent do
+			t += 0.03
+			local y = math.sin(t * 2) * 0.2
+			local x = math.sin(t + offset) * 0.3
+			part.CFrame = baseCFrame * CFrame.new(x, y, 0)
+			task.wait(0.05)
+		end
+	end)
 end
 
 local function rebuild()
@@ -56,19 +42,28 @@ local function rebuild()
 	if not profile or not profile.Aquarium then return end
 	local tanks = profile.Aquarium.Tanks or {}
 	for idx, tank in ipairs(tanks) do
-		local basePos = Vector3.new(0 + (idx - 1) * 8, 3, 0)
-		-- tank box
-		local box = Instance.new("Part")
-		box.Size = Vector3.new(6, 4, 3)
-		box.CFrame = CFrame.new(basePos)
-		box.Anchored = true
-		box.Transparency = 0.5
-		box.Color = Color3.fromRGB(80, 120, 200)
-		box.Parent = root
-		-- fish labels
+		local model = ModelFactory.createTankModel(tank.type or "Small")
+		model.Parent = root
+		local basePos = Vector3.new(0 + (idx - 1) * 10, 3, 0)
+		for _, p in ipairs(model:GetChildren()) do
+			if p:IsA("BasePart") then
+				p.CFrame = CFrame.new(basePos + Vector3.new(0, 0, 0))
+			end
+		end
 		for s, fish in ipairs(tank.slots or {}) do
-			local offset = Vector3.new(-2.5 + (s - 1) * 1.0, 4.5, 0)
-			makeBillboard((fish.name or "Fish") .. " [" .. (fish.rarity or "?") .. "]", CFrame.new(basePos + offset))
+			local fishModel = ModelFactory.createFishModel(fish)
+			fishModel.Parent = model
+			local body = fishModel:FindFirstChild("Body")
+			local fin = fishModel:FindFirstChild("Fin")
+			local slotOffset = Vector3.new(-3 + (s - 1) * 0.8, 4.5, 0)
+			local cf = CFrame.new(basePos + slotOffset)
+			if body then
+				body.CFrame = cf
+				animateFish(body, cf, s * 0.7)
+			end
+			if fin and body then
+				fin.CFrame = body.CFrame * CFrame.new(0.45, 0, 0)
+			end
 		end
 	end
 end
