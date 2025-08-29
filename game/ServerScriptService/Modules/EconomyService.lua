@@ -93,13 +93,20 @@ end
 function EconomyService:PlaceFish(userId, tankIndex, fishIndex)
 	local profile = ProfileManager:Get(userId)
 	if not profile then return false end
-	local tank = profile.Aquarium.Tanks[tankIndex]
-	local fish = profile.Inventory.Fish[fishIndex]
+	if type(tankIndex) ~= "number" or type(fishIndex) ~= "number" then return false end
+	local tanks = profile.Aquarium and profile.Aquarium.Tanks
+	local inv = profile.Inventory and profile.Inventory.Fish
+	if type(tanks) ~= "table" or type(inv) ~= "table" then return false end
+	if tankIndex < 1 or tankIndex > #tanks then return false end
+	if fishIndex < 1 or fishIndex > #inv then return false end
+	local tank = tanks[tankIndex]
+	local fish = inv[fishIndex]
 	if not tank or not fish then return false end
 	local tType = TankData.Types[tank.type]
+	if not tType then return false end
 	if #tank.slots >= tType.slots then return false end
 	table.insert(tank.slots, fish)
-	table.remove(profile.Inventory.Fish, fishIndex)
+	table.remove(inv, fishIndex)
 	return true
 end
 
