@@ -115,12 +115,23 @@ function EconomyService:PlaceFish(userId, tankIndex, fishIndex)
 	local ModelFactory = require(game:GetService("ReplicatedStorage"):WaitForChild("Modules"):WaitForChild("ModelFactory"))
 	local fishModel = ModelFactory.createFishModel(fish)
 	
-	-- Position fish inside tank water on the proper platform (updated for bigger tanks)
-	local tankPosition = Vector3.new(tankIndex * 14 - 14, 5, 5) -- align with new tank platforms
+	-- Position fish inside tank water using the actual Water part for bounds
+	local tankPosition = Vector3.new(tankIndex * 14 - 14, 5, 5)
+	local tankModel = workspace:FindFirstChild("Tank" .. tostring(tankIndex))
+	local waterPart = tankModel and tankModel:FindFirstChild("Water")
+	local swimCenter = waterPart and waterPart.Position or Vector3.new(tankPosition.X, tankPosition.Y + 1, tankPosition.Z)
+	local swimHalf = waterPart and (waterPart.Size / 2) or Vector3.new(3, 2, 2)
+	-- keep margin from glass
+	swimHalf = Vector3.new(math.max(0.5, swimHalf.X - 0.5), math.max(0.5, swimHalf.Y - 0.5), math.max(0.5, swimHalf.Z - 0.5))
+
+	local function randHalf(h)
+		return (math.random() * 2 - 1) * h
+	end
+
 	local spawnPosition = CFrame.new(
-		tankPosition.X + math.random(-3, 3), -- wider range for bigger tanks
-		tankPosition.Y + math.random(0, 3),  -- more vertical space
-		tankPosition.Z + math.random(-2, 2)  -- more depth
+		swimCenter.X + randHalf(swimHalf.X),
+		swimCenter.Y + randHalf(swimHalf.Y),
+		swimCenter.Z + randHalf(swimHalf.Z)
 	)
 	
 	-- Use SetPrimaryPartCFrame since fishModel is now a Model
@@ -133,6 +144,23 @@ function EconomyService:PlaceFish(userId, tankIndex, fishIndex)
 	
 	-- Parent to workspace so it's visible
 	fishModel.Parent = game.Workspace
+
+	-- Configure swimming area attributes for client/server controllers
+	fishModel:SetAttribute("SwimCenterX", swimCenter.X)
+	fishModel:SetAttribute("SwimCenterY", swimCenter.Y)
+	fishModel:SetAttribute("SwimCenterZ", swimCenter.Z)
+	fishModel:SetAttribute("SwimHalfX", swimHalf.X)
+	fishModel:SetAttribute("SwimHalfY", swimHalf.Y)
+	fishModel:SetAttribute("SwimHalfZ", swimHalf.Z)
+
+	-- Snap BodyPosition to spawn inside tank immediately
+	local body = fishModel:FindFirstChild("Body")
+	if body then
+		local bp = body:FindFirstChildOfClass("BodyPosition")
+		if bp then bp.Position = spawnPosition.Position end
+		local bv = body:FindFirstChildOfClass("BodyVelocity")
+		if bv then bv.Velocity = Vector3.new(0, 0, 0) end
+	end
 	
 	table.insert(tank.slots, fish)
 	table.remove(inv, fishIndex)
@@ -155,7 +183,7 @@ function EconomyService:PlaceDecoration(userId, tankIndex, decorationId)
 		return false
 	end
 	local price = item.price or 0
-	if (profile.Currencies.Coins or 0) < price then return false end
+	if type(profile.Currencies.Coins) ~= "number" or profile.Currencies.Coins < price then return false end
 	profile.Currencies.Coins -= price
 	tank.decorations = tank.decorations or {}
 	table.insert(tank.decorations, decorationId)

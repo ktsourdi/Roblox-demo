@@ -260,16 +260,28 @@ function ModelFactory.createFishModel(fish)
 	bodyVel.Velocity = Vector3.new(0, 0, 0)
 	bodyVel.Parent = body
 	
-	-- Swimming behavior
+	-- Swimming behavior - keep within tank bounds if attributes exist
 	task.spawn(function()
 		while model.Parent and body.Parent do
-			-- Random gentle movement
-			local randomPos = body.Position + Vector3.new(
-				math.random(-3, 3),
-				math.random(-1, 1),
-				math.random(-3, 3)
+			local center = Vector3.new(
+				model:GetAttribute("SwimCenterX") or body.Position.X,
+				model:GetAttribute("SwimCenterY") or body.Position.Y,
+				model:GetAttribute("SwimCenterZ") or body.Position.Z
 			)
-			bodyPos.Position = randomPos
+			local half = Vector3.new(
+				model:GetAttribute("SwimHalfX") or 3,
+				model:GetAttribute("SwimHalfY") or 2,
+				model:GetAttribute("SwimHalfZ") or 2
+			)
+			local function randHalf(h)
+				return (math.random() * 2 - 1) * h
+			end
+			local target = Vector3.new(
+				center.X + randHalf(half.X),
+				center.Y + randHalf(half.Y),
+				center.Z + randHalf(half.Z)
+			)
+			bodyPos.Position = target
 			
 			-- Random velocity for more natural movement
 			bodyVel.Velocity = Vector3.new(
@@ -278,7 +290,7 @@ function ModelFactory.createFishModel(fish)
 				math.random(-2, 2)
 			)
 			
-			task.wait(math.random(3, 6))
+			task.wait(math.random(2, 4))
 		end
 	end)
 	

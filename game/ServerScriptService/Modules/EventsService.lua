@@ -20,7 +20,13 @@ end
 function EventsService:Init(profileManager)
 	ProfileManager = profileManager
 	Players.PlayerAdded:Connect(function(player)
-		local profile = ProfileManager:Get(player.UserId)
+		-- Wait briefly for profile to load on join, to ensure daily bonus applies
+		local profile
+		for _ = 1, 40 do -- up to ~2 seconds
+			profile = ProfileManager:Get(player.UserId)
+			if profile then break end
+			task.wait(0.05)
+		end
 		if not profile then return end
 		local now = os.time()
 		local last = profile.Stats.LastDailyLogin or 0

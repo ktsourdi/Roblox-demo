@@ -54,6 +54,13 @@ local limiter = RateLimiter.new(2, 5)
 Remotes.GetProfile.OnServerInvoke = function(player)
 	if not limiter:allow("GetProfile:" .. player.UserId, 1, 4) then return nil end
 	local profile = ProfileManager:Get(player.UserId)
+	if not profile then
+		for _ = 1, 10 do
+			task.wait(0.05)
+			profile = ProfileManager:Get(player.UserId)
+			if profile then break end
+		end
+	end
 	if not profile then return nil end
 	return profileForClient(profile)
 end
@@ -177,7 +184,7 @@ MarketplaceService.ProcessReceipt = function(receipt)
 		rewarded = true
 	elseif productId == ShopConfig.DevProducts.EventDecor then
 		local profile = ProfileManager:Get(player.UserId)
-		if profile then
+		if profile and profile.Aquarium and profile.Aquarium.Tanks and profile.Aquarium.Tanks[1] then
 			-- Grant glow_coral to first tank for simplicity
 			local tank = profile.Aquarium.Tanks[1]
 			tank.decorations = tank.decorations or {}
@@ -185,11 +192,9 @@ MarketplaceService.ProcessReceipt = function(receipt)
 			rewarded = true
 		end
 	end
-	-- If a gamepass is purchased, invalidate cache for that user
-	if not rewarded then
-		if receipt.ProductType == Enum.ProductType.GamePass then
-			OwnedGamepasses[receipt.PlayerId] = nil
-		end
+	-- Invalidate gamepass cache for this user on any pass purchase
+	if receipt.ProductType == Enum.ProductType.GamePass then
+		OwnedGamepasses[receipt.PlayerId] = nil
 	end
 	return rewarded and Enum.ProductPurchaseDecision.PurchaseGranted or Enum.ProductPurchaseDecision.NotProcessedYet
 end

@@ -30,6 +30,24 @@ local function deepCopy(tbl)
 	return result
 end
 
+-- Remove ephemeral/internal keys (e.g., fields starting with "_") to avoid
+-- persisting runtime-only data into DataStores. Applies recursively.
+local function sanitizeForSave(tbl)
+	if type(tbl) ~= "table" then return tbl end
+	local out = {}
+	for k, v in pairs(tbl) do
+		local isInternal = (type(k) == "string" and string.sub(k, 1, 1) == "_")
+		if not isInternal then
+			if type(v) == "table" then
+				out[k] = sanitizeForSave(v)
+			else
+				out[k] = v
+			end
+		end
+	end
+	return out
+end
+
 local function mergeTemplate(saved, template)
 	local out = deepCopy(template)
 	if type(saved) ~= "table" then
@@ -64,6 +82,8 @@ function ProfileManager:LoadAsync(player)
 		data = nil
 	end
 	local profile = mergeTemplate(data, ProfileTemplate)
+	-- Ensure any stray internal keys from previous saves are removed at load.
+	profile = mergeTemplate(sanitizeForSave(profile), ProfileTemplate)
 	activeProfiles[userId] = profile
 	return profile
 end
@@ -72,8 +92,10 @@ function ProfileManager:SaveAsync(userId)
 	local profile = activeProfiles[userId]
 	if not profile then return end
 	local key = tostring(userId)
+	-- Store a sanitized copy to keep the DataStore clean of runtime-only fields
+	local payload = sanitizeForSave(profile)
 	local success, err = pcall(function()
-		ProfileStore:SetAsync(key, profile)
+		ProfileStore:SetAsync(key, payload)
 	end)
 	if not success then
 		warn("Failed to save profile for", userId, err)
