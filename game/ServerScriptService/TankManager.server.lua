@@ -6,13 +6,16 @@ local ModelFactory = require(ReplicatedStorage:WaitForChild("Modules"):WaitForCh
 
 -- Create physical tanks on the platforms
 local function createTanks()
+	local tankTypes = {"Small", "Medium", "Large"}
+	
 	for i = 1, 3 do
 		local platform = workspace:FindFirstChild("TankPlatform" .. i)
 		if platform then
-			local tank = ModelFactory.createTankModel("Small")
+			local tankType = tankTypes[i] or "Small"
+			local tank = ModelFactory.createTankModel(tankType)
 			tank:SetPrimaryPartCFrame(CFrame.new(
 				platform.Position.X,
-				platform.Position.Y + 3, -- above platform
+				platform.Position.Y + 4, -- above platform (higher for bigger tanks)
 				platform.Position.Z
 			))
 			tank.Parent = workspace

@@ -1,3 +1,6 @@
+-- DISABLED: This script was creating duplicate tanks - now handled by TankManager.server.lua
+return
+
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Workspace = game:GetService("Workspace")

@@ -141,12 +141,12 @@ for i = 1, 6 do
 	bench.Parent = workspace
 end
 
--- Create tank display platforms
+-- Create tank display platforms (bigger for larger tanks)
 for i = 1, 3 do
 	local platform = Instance.new("Part")
 	platform.Name = "TankPlatform" .. i
-	platform.Size = Vector3.new(8, 1, 4)
-	platform.Position = Vector3.new(i * 8 - 8, 0.5, 5)
+	platform.Size = Vector3.new(12, 1.5, 8)
+	platform.Position = Vector3.new(i * 14 - 14, 0.75, 5)
 	platform.Anchored = true
 	platform.Material = Enum.Material.Concrete
 	platform.Color = Color3.fromRGB(200, 200, 220)
@@ -155,8 +155,8 @@ for i = 1, 3 do
 	-- Add a sign above each platform
 	local sign = Instance.new("Part")
 	sign.Name = "TankSign" .. i
-	sign.Size = Vector3.new(4, 2, 0.2)
-	sign.Position = platform.Position + Vector3.new(0, 4, -2.5)
+	sign.Size = Vector3.new(6, 3, 0.3)
+	sign.Position = platform.Position + Vector3.new(0, 6, -4.5)
 	sign.Anchored = true
 	sign.Material = Enum.Material.Wood
 	sign.Color = Color3.fromRGB(101, 67, 33)

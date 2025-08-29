@@ -115,13 +115,21 @@ function EconomyService:PlaceFish(userId, tankIndex, fishIndex)
 	local ModelFactory = require(game:GetService("ReplicatedStorage"):WaitForChild("Modules"):WaitForChild("ModelFactory"))
 	local fishModel = ModelFactory.createFishModel(fish)
 	
-	-- Position fish inside tank water on the proper platform
-	local tankPosition = Vector3.new(tankIndex * 8 - 8, 3, 5) -- align with tank platforms
-	fishModel.CFrame = CFrame.new(
-		tankPosition.X + math.random(-2, 2),
-		tankPosition.Y + math.random(0, 2),
-		tankPosition.Z + math.random(-1, 1)
+	-- Position fish inside tank water on the proper platform (updated for bigger tanks)
+	local tankPosition = Vector3.new(tankIndex * 14 - 14, 5, 5) -- align with new tank platforms
+	local spawnPosition = CFrame.new(
+		tankPosition.X + math.random(-3, 3), -- wider range for bigger tanks
+		tankPosition.Y + math.random(0, 3),  -- more vertical space
+		tankPosition.Z + math.random(-2, 2)  -- more depth
 	)
+	
+	-- Use SetPrimaryPartCFrame since fishModel is now a Model
+	if fishModel.PrimaryPart then
+		fishModel:SetPrimaryPartCFrame(spawnPosition)
+	else
+		-- Fallback if no PrimaryPart
+		fishModel:MoveTo(spawnPosition.Position)
+	end
 	
 	-- Parent to workspace so it's visible
 	fishModel.Parent = game.Workspace
