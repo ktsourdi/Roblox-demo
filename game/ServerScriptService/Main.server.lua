@@ -43,6 +43,7 @@ local function profileForClient(profile)
 		Aquarium = deepCopy(profile.Aquarium or {}),
 		Stats = {
 			Likes = profile.Stats and profile.Stats.Likes or 0,
+			Onboarding = deepCopy((profile.Stats and profile.Stats.Onboarding) or {}),
 		}
 	}
 	return out
@@ -86,6 +87,17 @@ end)
 Remotes.PlaceDecoration.OnServerEvent:Connect(function(player, tankIndex, decorationId)
 	if not limiter:allow("PlaceDecoration:" .. player.UserId, 2, 4) then return end
 	EconomyService:PlaceDecoration(player.UserId, tankIndex, decorationId)
+end)
+
+-- Onboarding flags
+Remotes.SetOnboarding.OnServerEvent:Connect(function(player, key, value)
+	if not limiter:allow("SetOnboard:" .. player.UserId, 2, 6) then return end
+	if type(key) ~= "string" then return end
+	local profile = ProfileManager:Get(player.UserId)
+	if not profile then return end
+	profile.Stats = profile.Stats or {}
+	profile.Stats.Onboarding = profile.Stats.Onboarding or {}
+	profile.Stats.Onboarding[key] = value == true
 end)
 
 -- Shop/config info

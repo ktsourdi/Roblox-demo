@@ -41,4 +41,5 @@ ensureRemote(remotesFolder, "Announcement")
 ensureRemoteFunction(remotesFolder, "GetProfile")
 ensureRemote(remotesFolder, "PlaceDecoration")
 ensureRemoteFunction(remotesFolder, "GetShop")
+ensureRemote(remotesFolder, "SetOnboarding")
 

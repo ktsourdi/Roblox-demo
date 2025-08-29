@@ -11,7 +11,7 @@ local ProfileTemplate = {
 	Currencies = { Tickets = 250, Coins = 500 },
 	Inventory = { Fish = {}, Decorations = {} },
 	Aquarium = { Tanks = { { type = "Small", slots = {}, decorations = {} } }, Rating = 0 },
-	Stats = { Likes = 0, TicketsEarnedLifetime = 0, LastDailyLogin = 0, LikedBy = {}, RedeemedCodes = {} },
+	Stats = { Likes = 0, TicketsEarnedLifetime = 0, LastDailyLogin = 0, LikedBy = {}, RedeemedCodes = {}, Onboarding = { Shop = false, Inventory = false, Decor = false, Friends = false } },
 }
 
 local activeProfiles = {}
